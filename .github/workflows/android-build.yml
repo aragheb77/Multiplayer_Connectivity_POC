@@ -3,12 +3,31 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Validate project layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            settings.gradle.kts
+            build.gradle.kts
+            connectivity/build.gradle.kts
+            sample-app/build.gradle.kts
+            sample-app-two/build.gradle.kts
+            connectivity/src/main/java/com/ragheb/connectivity/ConnectivityClient.kt
+            connectivity/src/main/java/com/ragheb/connectivity/internal/NearbyConnectionsTransport.kt
+          )
+          for file in "${required[@]}"; do
+            test -s "$file" || { echo "::error::Missing or empty project file: $file"; exit 1; }
+          done
+          echo "Project layout validated."
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -21,6 +40,13 @@ jobs:
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build both sample apps
         run: gradle --no-daemon --stacktrace --warning-mode all :sample-app:assembleDebug :sample-app-two:assembleDebug
+      - name: Verify both APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s sample-app/build/outputs/apk/debug/sample-app-debug.apk
+          test -s sample-app-two/build/outputs/apk/debug/sample-app-two-debug.apk
+          ls -lh sample-app/build/outputs/apk/debug/*.apk sample-app-two/build/outputs/apk/debug/*.apk
       - uses: actions/upload-artifact@v4
         with:
           name: local-multiplayer-poc-debug-apks
