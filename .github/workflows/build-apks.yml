@@ -36,15 +36,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f LocalMultiplayerPOC/settings.gradle.kts || {
-            echo "::error::Source payload is missing LocalMultiplayerPOC/settings.gradle.kts"
-            echo "The payload must contain the complete Android Gradle project, not a README-only folder."
-            exit 1
-          }
-          test -f LocalMultiplayerPOC/build.gradle.kts
-          test -f LocalMultiplayerPOC/connectivity/build.gradle.kts
-          test -f LocalMultiplayerPOC/sample-app/build.gradle.kts
-          test -f LocalMultiplayerPOC/sample-app-two/build.gradle.kts
+          required=(
+            LocalMultiplayerPOC/settings.gradle.kts
+            LocalMultiplayerPOC/build.gradle.kts
+            LocalMultiplayerPOC/connectivity/build.gradle.kts
+            LocalMultiplayerPOC/sample-app/build.gradle.kts
+            LocalMultiplayerPOC/sample-app-two/build.gradle.kts
+          )
+          for file in "${required[@]}"; do
+            test -f "$file" || {
+              echo "::error::Source payload is missing $file"
+              echo "Payload must contain the complete Android project, not a README-only folder."
+              exit 1
+            }
+          done
           echo "Validated root Gradle settings and all three Android modules."
 
       - name: Build both sample APKs
@@ -55,10 +60,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app_one="LocalMultiplayerPOC/sample-app/build/outputs/apk/debug/sample-app-debug.apk"
-          app_two="LocalMultiplayerPOC/sample-app-two/build/outputs/apk/debug/sample-app-two-debug.apk"
-          test -f "$app_one" || { echo "::error::Sample app 1 APK missing: $app_one"; exit 1; }
-          test -f "$app_two" || { echo "::error::Sample app 2 APK missing: $app_two"; exit 1; }
+          app_one="$(find LocalMultiplayerPOC/sample-app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
+          app_two="$(find LocalMultiplayerPOC/sample-app-two/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
+          test -n "$app_one" || { echo "::error::Sample app 1 APK missing"; exit 1; }
+          test -n "$app_two" || { echo "::error::Sample app 2 APK missing"; exit 1; }
           ls -lh "$app_one" "$app_two"
 
       - name: Upload debug APKs
