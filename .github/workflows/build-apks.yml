@@ -32,16 +32,34 @@ jobs:
       - name: Extract reviewed source payload
         run: tar -xzf LocalMultiplayerPOC_repo_payload.tar.gz
 
+      - name: Validate Android project layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f LocalMultiplayerPOC/settings.gradle.kts || {
+            echo "::error::Source payload is missing LocalMultiplayerPOC/settings.gradle.kts"
+            echo "The payload must contain the complete Android Gradle project, not a README-only folder."
+            exit 1
+          }
+          test -f LocalMultiplayerPOC/build.gradle.kts
+          test -f LocalMultiplayerPOC/connectivity/build.gradle.kts
+          test -f LocalMultiplayerPOC/sample-app/build.gradle.kts
+          test -f LocalMultiplayerPOC/sample-app-two/build.gradle.kts
+          echo "Validated root Gradle settings and all three Android modules."
+
       - name: Build both sample APKs
         working-directory: LocalMultiplayerPOC
         run: gradle --no-daemon assembleDebug
 
-      - name: Verify APK outputs exist
+      - name: Verify both APK outputs exist
         shell: bash
         run: |
           set -euo pipefail
-          find LocalMultiplayerPOC -path '*/build/outputs/apk/debug/*.apk' -type f -print
-          test -n "$(find LocalMultiplayerPOC -path '*/build/outputs/apk/debug/*.apk' -type f -print -quit)"
+          app_one="LocalMultiplayerPOC/sample-app/build/outputs/apk/debug/sample-app-debug.apk"
+          app_two="LocalMultiplayerPOC/sample-app-two/build/outputs/apk/debug/sample-app-two-debug.apk"
+          test -f "$app_one" || { echo "::error::Sample app 1 APK missing: $app_one"; exit 1; }
+          test -f "$app_two" || { echo "::error::Sample app 2 APK missing: $app_two"; exit 1; }
+          ls -lh "$app_one" "$app_two"
 
       - name: Upload debug APKs
         uses: actions/upload-artifact@v4
