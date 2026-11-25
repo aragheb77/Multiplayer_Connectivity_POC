@@ -4,16 +4,15 @@
 
 ## Current delivery status
 
-- **Source project:** created.
-- **Reusable library boundary:** created (`:connectivity`).
-- **Transport adapter:** Nearby Connections implementation added; Google SDK types are confined to the adapter.
-- **Sample consumer 1:** basic discovery, peer request/approval, manual code comparison, chat, and disconnect UI.
-- **Sample consumer 2:** separate application ID and separate consumer implementation using only the library public API.
-- **Build verification:** not run locally; Android SDK and Gradle are unavailable in the authoring environment. The included GitHub Actions workflow builds both debug APKs and uploads them as a 14-day artifact once pushed to a repository.
-- **Physical-device verification:** not run. Requires two physical Android devices and Google Play services.
-- **APK:** not included in this source archive. No successful build has yet produced an APK.
+**POC DECISION: REJECTED — do not integrate or reuse this implementation.** The owner has decided to stop this attempt and restart from scratch later.
 
-Do not treat this source delivery as a passed POC. See `docs/TEST-REPORT.md` for the actual verification state.
+- Source and initial reusable-library/sample structure exist, but are not accepted.
+- CI did not produce a successful build of both sample apps. The latest workflow run failed during Gradle script compilation after the Kotlin toolchain change.
+- No successful APK build has been verified.
+- No two-device physical test, end-to-end connectivity test, or production-readiness review has been completed.
+- The implementation is retained only as historical reference. Do not treat it as an approved baseline or continue implementation under this POC.
+
+The decision is recorded in `docs/DECISION-RECORD.md`. Restart later as a new POC with fresh architecture/toolchain validation and acceptance gates.
 
 ## Project structure
 
